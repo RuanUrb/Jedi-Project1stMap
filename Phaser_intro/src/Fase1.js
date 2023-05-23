@@ -88,7 +88,7 @@ class Fase1 extends Phaser.Scene{
         this.interact_txt.setVisible(false);   // deixa invisível
 
         // criação de lista de textos (diálogs) e do objeto dialogs
-        this.txtLst_0 = ["Eu estava te esperando! Seja bem vindo, jogador. Meu nome é Knaíffes, mas pode me chamar de facas.", "Daqui em diante aparecerão inimigos que voce precisará derrotar e perguntas que voce precisará responder.", "Ao responder corretamente, o muro se abrirá e você receberá mais inimigos.", "Porém, cuidado. Ao final desse desafio estará um ser de força incomum. Esteja preparado."];
+        this.txtLst_0 = ["Eu estava te esperando! Seja bem vindo, jogador. Meu nome é Knaíffes, mas pode me chamar de Facas.", "Daqui em diante aparecerão inimigos que você precisará derrotar e perguntas que precisará responder.", "Ao responder corretamente, o muro se abrirá e você receberá mais inimigos.", "Porém, cuidado! Ao final desse desafio estará um ser de força incomum. Esteja preparado."];
         this.quest_0 = ["Para produzir bolos, uma fábrica utiliza 5 bandejas de ovos por dia. Sabendo que em uma bandeja tem 30 ovos, quantos ovos serão necessários para produção de bolos no período de 15 dias?",
         1, "◯ 75", "◯ 150",  "◯ 450",  "◯ 2250"]
         
