@@ -14,7 +14,7 @@ class Fase1 extends Phaser.Scene{
         this.load.image('tiles', 'assets/maps/tilesheet.png');
 
         console.log('load map');
-        this.load.tilemapTiledJSON('themap', 'assets/maps/mapa2.json');
+        this.load.tilemapTiledJSON('themap', 'assets/maps/mapa.json');
     }
 
 // função para criação dos elementos
