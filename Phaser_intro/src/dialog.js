@@ -72,9 +72,9 @@ class dialogs {
     }
 
     makeQuestion(questSeq, acertou, errou) {
-      
       this.isActive=true;
       this.questActive=true;
+      this.questFlag = false
       var wsz = this._calcWindowSize()
       this.wnd.setPosition(wsz.x, wsz.y-wsz.h)
       this.wnd.setSize(wsz.w, 2*wsz.h)
@@ -156,6 +156,7 @@ class dialogs {
           this.dlgTxt.setVisible(false);
           this.wnd.setVisible(false);
           this.isActive=false;
+          this.questActive = true
           if (this.onComplete != null)
           {
             this.onComplete(this.scene);

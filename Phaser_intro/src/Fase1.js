@@ -1,26 +1,25 @@
 // Configuração do jogo
-
-//var player;
+var bossHPBar;
+var boss = false
 
 class Fase1 extends Phaser.Scene{
-    
     preload ()
     {
-        console.log('load spritesheet');
         this.load.spritesheet('player_sp', 'assets/spritesheets/player.png', { frameWidth: 32, frameHeight: 32 });
         this.load.spritesheet('knaiffs_sp', 'assets/spritesheets/knaiffs.png', {frameWidth: 64, frameHeight: 64 });
         this.load.spritesheet('meilin', 'assets/spritesheets/meilin.png', {frameWidth: 64, frameHeight: 64})
-
-        console.log('load tile sheet');
         this.load.image('tiles', 'assets/maps/tilesheet.png');
-
-        console.log('load map');
         this.load.tilemapTiledJSON('themap', 'assets/maps/map2.json');
+        //this.load.audio('boss', 'assets/ost/boss_ost.mp3')
     }
 
 // função para criação dos elementos
     create ()
-    {
+    {   
+        //this.boss_bgm = this.sound.add('boss', {loop: true}).setVolume(0.025)
+        
+        const messer_pos = {x: 500, y: 50}
+        const player_pos = {x: 35, y: 50}
 
         // criação do mapa e ligação com a imagem (tilesheet)
         this.map = this.make.tilemap({ key: 'themap', tileWidth: 16, tileHeight: 16 });
@@ -32,19 +31,11 @@ class Fase1 extends Phaser.Scene{
         
         
         // criação do rei
-        this.player = this.physics.add.sprite(35, 50, 'player_sp', 0);
+        this.player = this.physics.add.sprite(messer_pos.x, messer_pos.y, 'player_sp', 0);
         this.cameras.main.startFollow(this.player);
         this.cameras.main.setZoom(2);
 
         this.player.body.width = 30;
-
-        //this.naiffsNPC = this.physics.add.sprite(65, 200, 'knaiffs_sp', 0);
-        //this.naiffsNPC.setScale(0.5);
-        
-        //this.naiffsNPC.body.setSize(20, 50);
-
-        //this.naiffsNPC.setFrame(27);
-
 
         // criação da Meilin 
 
@@ -55,6 +46,14 @@ class Fase1 extends Phaser.Scene{
             meilin.body.setImmovable(true)
             meilin.setVelocity(0)
         })
+
+        // criação do boss messer
+
+        this.messer = this.physics.add.sprite(messer_pos.x, messer_pos.y, 'knaiffs_sp', 0);
+        this.messer.setScale(0.5);
+        this.messer.body.setSize(50, 80);
+        this.messer.setFrame(27)
+        this.messer.hp = 1000
 
         // criação da colisão com camadas
         this.wallsLayer.setCollisionBetween(65, 750, true);
@@ -73,10 +72,16 @@ class Fase1 extends Phaser.Scene{
         this.physics.world.enable(this.zone_dlg);
         this.physics.add.overlap(this.player, this.zone_dlg);
 
+        this.zone_boss = this.add.zone(messer_pos.x -20, messer_pos.y - 20).setSize(50, 50)
+        this.physics.world.enable(this.zone_boss)
+        this.physics.add.overlap(this.player, this.zone_boss)
+
+
+        /*
         this.zone_ques = this.add.zone(200,80).setSize(100,70);
         this.physics.world.enable(this.zone_ques);
         this.physics.add.overlap(this.player, this.zone_ques);
-
+*/
         // criação da mensagem "pressione E para interagir"
         var px = this.cameras.main.width*0.35;  // pos horizontal
         var py = 2*this.cameras.main.height/3;  // pos vertical
@@ -88,12 +93,17 @@ class Fase1 extends Phaser.Scene{
             stroke: '#000000',
             strokeThickness: 4,
         });
+
+
         this.interact_txt.setScrollFactor(0);  // deixa em posição relativa à camera (e não ao mapa)
         this.interact_txt.setVisible(false);   // deixa invisível
 
         // criação de lista de textos (diálogs) e do objeto dialogs
-        this.txtLst_0 = ["Olá, jogador. Temo lhe dizer que o encontro em apuros.", "A saída é logo a frente, mas uma força - uma energia descomunal - a bloqueia.", "Tenho algo que pode lhe ser útil, mas primeiramente me responda:"];
-        
+        var textos = ["Olá, jogador. Temo lhe dizer que o encontro em apuros.", "A saída é logo a frente, mas uma força - uma energia descomunal - a bloqueia.", "Tenho algo que pode lhe ser útil, mas primeiramente me responda:"];
+        this.txtLst_0 = textos.map(text => `Meilin:\n${text}`)
+
+        var facas = [""]
+
         this.quest_0 = ["Para produzir bolos, uma fábrica utiliza 5 bandejas de ovos por dia. Sabendo que em uma bandeja tem 30 ovos, quantos ovos serão necessários para produção de bolos no período de 15 dias?",
         1, "◯ 75", "◯ 150",  "◯ 450",  "◯ 2250"]
         
@@ -104,6 +114,7 @@ class Fase1 extends Phaser.Scene{
         this.spacePressed = false;
 
 
+        //animação de corrida do player
         this.anims.create({
             key: 'run',
             frames: this.anims.generateFrameNumbers('player_sp', {frames: [24, 25, 26, 27]}),
@@ -112,17 +123,25 @@ class Fase1 extends Phaser.Scene{
             });
 
         this.anims.create({
-            key: 'talk_meilin',
+            key: 'meilin_talk',
                 frames: this.anims.generateFrameNumbers('meilin', {frames: [91, 92, 93, 94, 95, 91]}),
                 frameRate: 10,
                 repeat: 0
                 });
-
+        
+        //animação de interação com Meilin
         this.anims.create({
-            key: 'stand_meilin',
+            key: 'meilin_stand',
             frames: this.anims.generateFrameNumbers('meilin', {frames: [91]}),
             frameRate: 10,
             repeat: 1
+        })
+
+        this.anims.create({
+            key: 'knives_cast',
+            frames: this.anims.generateFrameNumbers('knaiffs_sp', {frames: [28, 29, 30]}),
+            frameRate: 5,
+            repeat: 0
         })
         }
 
@@ -134,7 +153,7 @@ class Fase1 extends Phaser.Scene{
 
 
         if(this.dialogs.isActive){
-            this.meilin.anims.play('stand_meilin', true);
+            this.meilin.anims.play('meilin_stand', true);
         }
         // verifica se precisa avançar no diálogo
         if (this.dialogs.isActive && !this.spacePressed && this.keySPACE.isDown){
@@ -180,7 +199,6 @@ class Fase1 extends Phaser.Scene{
     checkActiveZone(){
         // se jogador dentro de zona e o diálogo não está ativo
         if (this.player.body.embedded && !this.dialogs.isActive){
-            // mostra a mensagem e verifica a tecla pressionada
             this.interact_txt.setVisible(true);
             if (this.keyE.isDown){
                 this.startDialogsOrQuestion();
@@ -195,12 +213,34 @@ class Fase1 extends Phaser.Scene{
     startDialogsOrQuestion(){
         if (this.physics.overlap(this.player, this.zone_dlg)){
                 this.dialogs.updateDlgBox(this.txtLst_0);
-        
         }
-        if (this.physics.overlap(this.player, this.zone_ques)){
-            this.dialogs.scene.dialogs.makeQuestion(this.quest_0, acertou_fcn, errou_fcn);
+        if(this.physics.overlap(this.player, this.zone_boss)){
+            
+            // Create method within update
+            this.messer.anims.play('knives_cast', true)
+            this.zone_boss.destroy()
+            //this.boss_bgm.play()
+            const camera = this.cameras.main;
+    const visibleWidth = camera.width;
+    const rectangleWidth = visibleWidth * 0.9;
+    const rectangleHeight = 100; // Set the desired height of the rectangle
+
+    const rectangleX = camera.centerX - visibleWidth / 2 + (visibleWidth - rectangleWidth) / 2;
+    const rectangleY = camera.centerY;
+
+    const rectangle = this.add.rectangle(rectangleX, rectangleY, rectangleWidth, rectangleHeight, 0xff0000);
+    rectangle.setOrigin(0.5); // Center the rectangle
+
+            boss = true
         }
     }
+
+if(boss){
+    bossHPBar.x = this.cameras.main.midPoint.x;
+}
+
+
+
 }
 
 function acertou_fcn(ptr){
