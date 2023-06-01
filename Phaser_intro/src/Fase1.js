@@ -9,12 +9,13 @@ class Fase1 extends Phaser.Scene{
         console.log('load spritesheet');
         this.load.spritesheet('player_sp', 'assets/spritesheets/player.png', { frameWidth: 32, frameHeight: 32 });
         this.load.spritesheet('knaiffs_sp', 'assets/spritesheets/knaiffs.png', {frameWidth: 64, frameHeight: 64 });
+        this.load.spritesheet('meilin', 'assets/spritesheets/meilin.png', {frameWidth: 64, frameHeight: 64})
 
         console.log('load tile sheet');
         this.load.image('tiles', 'assets/maps/tilesheet.png');
 
         console.log('load map');
-        this.load.tilemapTiledJSON('themap', 'assets/maps/mapa.json');
+        this.load.tilemapTiledJSON('themap', 'assets/maps/map2.json');
     }
 
 // função para criação dos elementos
@@ -31,30 +32,33 @@ class Fase1 extends Phaser.Scene{
         
         
         // criação do rei
-        this.player = this.physics.add.sprite(65, 750, 'player_sp', 0);
+        this.player = this.physics.add.sprite(35, 50, 'player_sp', 0);
         this.cameras.main.startFollow(this.player);
         this.cameras.main.setZoom(2);
 
         this.player.body.width = 30;
 
-        this.naiffsNPC = this.physics.add.sprite(65, 200, 'knaiffs_sp', 0);
-        //reduzindo a escala do npc(era muito grande)
-        this.naiffsNPC.setScale(0.5);
+        //this.naiffsNPC = this.physics.add.sprite(65, 200, 'knaiffs_sp', 0);
+        //this.naiffsNPC.setScale(0.5);
         
-        this.naiffsNPC.body.setSize(20, 50);
+        //this.naiffsNPC.body.setSize(20, 50);
 
-        this.naiffsNPC.setFrame(27);
+        //this.naiffsNPC.setFrame(27);
 
+
+        // criação da Meilin 
+
+        this.meilin = this.physics.add.sprite(122, 80, 'meilin', 0)
+        this.meilin.setScale(0.5)
+        this.meilin.setFrame(27)
+        this.physics.add.collider(this.player, this.meilin, (player, meilin)=> {
+            meilin.body.setImmovable(true)
+            meilin.setVelocity(0)
+        })
 
         // criação da colisão com camadas
         this.wallsLayer.setCollisionBetween(65, 750, true);
         this.physics.add.collider(this.player, this.wallsLayer);
-        this.physics.add.collider(this.player, this.naiffsNPC, function(player, naiffsNPC){
-            naiffsNPC.setVelocity(0);
-            naiffsNPC.body.setImmovable(true);
-            
-        });
-        
         
         // ligação das teclas de movimento
         this.keyA = this.input.keyboard.addKey('A');
@@ -65,7 +69,7 @@ class Fase1 extends Phaser.Scene{
         this.keySPACE = this.input.keyboard.addKey('SPACE');
 
         //criacao das zonas
-        this.zone_dlg = this.add.zone(30, 200).setSize(100, 100);
+        this.zone_dlg = this.add.zone(98, 55).setSize(50, 50);
         this.physics.world.enable(this.zone_dlg);
         this.physics.add.overlap(this.player, this.zone_dlg);
 
@@ -88,7 +92,8 @@ class Fase1 extends Phaser.Scene{
         this.interact_txt.setVisible(false);   // deixa invisível
 
         // criação de lista de textos (diálogs) e do objeto dialogs
-        this.txtLst_0 = ["Eu estava te esperando! Seja bem vindo, jogador. Meu nome é Knaíffes, mas pode me chamar de Facas.", "Daqui em diante aparecerão inimigos que você precisará derrotar e perguntas que precisará responder.", "Ao responder corretamente, o muro se abrirá e você receberá mais inimigos.", "Porém, cuidado! Ao final desse desafio estará um ser de força incomum. Esteja preparado."];
+        this.txtLst_0 = ["Olá, jogador. Temo lhe dizer que o encontro em apuros.", "A saída é logo a frente, mas uma força - uma energia descomunal - a bloqueia.", "Tenho algo que pode lhe ser útil, mas primeiramente me responda:"];
+        
         this.quest_0 = ["Para produzir bolos, uma fábrica utiliza 5 bandejas de ovos por dia. Sabendo que em uma bandeja tem 30 ovos, quantos ovos serão necessários para produção de bolos no período de 15 dias?",
         1, "◯ 75", "◯ 150",  "◯ 450",  "◯ 2250"]
         
@@ -105,14 +110,20 @@ class Fase1 extends Phaser.Scene{
             frameRate: 10,
             repeat: 0
             });
+
         this.anims.create({
-            key: 'talk_knaiffs',
-                frames: this.anims.generateFrameNumbers('knaiffs_sp', {frames: [91, 92, 93, 94, 95, 91]}),
+            key: 'talk_meilin',
+                frames: this.anims.generateFrameNumbers('meilin', {frames: [91, 92, 93, 94, 95, 91]}),
                 frameRate: 10,
                 repeat: 0
                 });
 
-
+        this.anims.create({
+            key: 'stand_meilin',
+            frames: this.anims.generateFrameNumbers('meilin', {frames: [91]}),
+            frameRate: 10,
+            repeat: 1
+        })
         }
 
 
@@ -120,8 +131,10 @@ class Fase1 extends Phaser.Scene{
     update (){
      // verifica e trata se jogador em zona ativa
         this.checkActiveZone();
+
+
         if(this.dialogs.isActive){
-            this.naiffsNPC.anims.play('talk_knaiffs', true);
+            this.meilin.anims.play('stand_meilin', true);
         }
         // verifica se precisa avançar no diálogo
         if (this.dialogs.isActive && !this.spacePressed && this.keySPACE.isDown){
