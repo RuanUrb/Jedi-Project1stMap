@@ -1,6 +1,3 @@
-// Configuração do jogo
-var bossHPBar;
-var boss = false
 
 class Fase1 extends Phaser.Scene{
     preload ()
@@ -10,14 +7,23 @@ class Fase1 extends Phaser.Scene{
         this.load.spritesheet('meilin', 'assets/spritesheets/meilin.png', {frameWidth: 64, frameHeight: 64})
         this.load.image('tiles', 'assets/maps/tilesheet.png');
         this.load.tilemapTiledJSON('themap', 'assets/maps/map2.json');
-        //this.load.audio('boss', 'assets/ost/boss_ost.mp3')
+        this.load.audio('warning', 'assets/ost/warning.wav')
+        this.load.audio('boss', 'assets/ost/boss_ost.mp3')
+        this.load.audio('dash', 'assets/ost/dash.wav')
     }
 
 // função para criação dos elementos
     create ()
     {   
-        //this.boss_bgm = this.sound.add('boss', {loop: true}).setVolume(0.025)
-        
+        this.boss_bgm = this.sound.add('boss', {loop: true})//.setVolume(0.025)
+        this.warning = this.sound.add('warning')//.setVolume(0.05)
+        this.dash = this.sound.add('dash')//.setVolume(0.05)
+        this.soundPlayed = false
+
+
+         this.storm = false, this.impulse = false,  this.stunned = false, this.boss = false
+
+
         const messer_pos = {x: 500, y: 50}
         const player_pos = {x: 35, y: 50}
 
@@ -53,11 +59,18 @@ class Fase1 extends Phaser.Scene{
         this.messer.setScale(0.5);
         this.messer.body.setSize(50, 80);
         this.messer.setFrame(27)
-        this.messer.hp = 1000
+
+        //bossfight attributes for messer
+        this.messer.cast = false
+        this.messer.lastSpell = 'Impulse'
+        this.messer.isStunned = false
+        this.messer.isAnimating = false
+
 
         // criação da colisão com camadas
         this.wallsLayer.setCollisionBetween(65, 750, true);
         this.physics.add.collider(this.player, this.wallsLayer);
+        this.physics.add.collider(this.messer, this.wallsLayer)
         
         // ligação das teclas de movimento
         this.keyA = this.input.keyboard.addKey('A');
@@ -143,11 +156,110 @@ class Fase1 extends Phaser.Scene{
             frameRate: 5,
             repeat: 0
         })
+
+        this.anims.create({
+            key: 'knives_storm',
+            frames: this.anims.generateFrameNumbers('knaiffs_sp', {frames: [31, 5, 18, 44]}),
+            frameRate: 10,
+            repeat: 1
+        })
+
+
+        this.anims.create({
+            key: 'knives_falls',
+            frames: this.anims.generateFrameNumbers('knaiffs_sp', {frames: [261, 262, 263, 264]}),
+            frameRate: 5,
+            repeat: 0
+        })
+
+        this.anims.create({
+            key: 'knives_stands',
+            frames: this.anims.generateFrameNumbers('knaiffs_sp', {frames: [264, 263, 262, 261]}),
+            frameRate: 5,
+            repeat: 0
+        })
+
         }
+
+
 
 
 // update é chamada a cada novo quadro
     update (){
+        const messerImpulse = () => {
+                console.log("Messer impulse")
+                /*
+                if(!this.soundPlayed){
+                    this.dash.play()
+                    this.soundPlayed = true
+                }
+                */
+
+                this.time.delayedCall(3000, ()=>{
+                    this.messer.lastSpell = 'Impulse'
+                    this.messer.cast = false
+                }, [], this);  
+        }
+
+        const messerKnives = () => {
+            console.log('Messer storm of knives!!!')
+            
+            if(!this.messer.isAnimating){
+                this.messer.anims.play('knives_storm', true)
+                this.messer.isAnimating = true
+            }
+
+            this.time.delayedCall(5000, ()=>{
+                this.messer.lastSpell = 'Storm'
+                this.messer.cast = false
+                this.messer.isAnimating = false
+            }, [], this);    
+        }
+
+        const messerCasts = () => {
+            console.log("Messer is casting.")
+            
+            if(!this.soundPlayed){
+                this.warning.play()
+                this.soundPlayed = true
+            }
+
+            if(!this.messer.isAnimating){
+                this.messer.anims.play('knives_cast', true)
+                this.messer.isAnimating = true
+            } 
+
+            this.time.delayedCall(3000, ()=>{
+                this.messer.cast = true
+                this.soundPlayed = false
+                this.messer.isAnimating = false
+            }, [], this);  
+        }
+
+        if(this.boss){
+            if(!this.messer.isStunned){
+                if(this.messer.cast){
+                    if(this.messer.lastSpell === 'Impulse'){
+                        messerKnives()
+                    }else if(this.messer.lastSpell === 'Storm'){
+                        messerImpulse()
+                    }
+                }else{
+                    messerCasts()
+                }
+            }else{
+                console.log("Messer fell!!")
+                setTimeout(()=>{
+                    console.log("Messer is up again.")
+                    this.messer.isStunned = false
+                }, 3000)
+            }
+            /*if(this.storm){
+                messerImpulse()
+            }*/
+        }
+
+
      // verifica e trata se jogador em zona ativa
         this.checkActiveZone();
 
@@ -214,41 +326,10 @@ class Fase1 extends Phaser.Scene{
         if (this.physics.overlap(this.player, this.zone_dlg)){
                 this.dialogs.updateDlgBox(this.txtLst_0);
         }
-        if(this.physics.overlap(this.player, this.zone_boss)){
-            
-            // Create method within update
-            this.messer.anims.play('knives_cast', true)
+        if(this.physics.overlap(this.player, this.zone_boss)){ 
+            this.boss_bgm.play()
             this.zone_boss.destroy()
-            //this.boss_bgm.play()
-            const camera = this.cameras.main;
-    const visibleWidth = camera.width;
-    const rectangleWidth = visibleWidth * 0.9;
-    const rectangleHeight = 100; // Set the desired height of the rectangle
-
-    const rectangleX = camera.centerX - visibleWidth / 2 + (visibleWidth - rectangleWidth) / 2;
-    const rectangleY = camera.centerY;
-
-    const rectangle = this.add.rectangle(rectangleX, rectangleY, rectangleWidth, rectangleHeight, 0xff0000);
-    rectangle.setOrigin(0.5); // Center the rectangle
-
-            boss = true
+            this.boss = true
         }
     }
-
-if(boss){
-    bossHPBar.x = this.cameras.main.midPoint.x;
-}
-
-
-
-}
-
-function acertou_fcn(ptr){
-    console.log("acertou");
-    this.dialogs.hideBox();
-}
-
-function errou_fcn(ptr){
-    console.log("errou")
-    this.dialogs.hideBox();
 }
