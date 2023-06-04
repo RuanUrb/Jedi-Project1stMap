@@ -5,26 +5,34 @@ class Fase1 extends Phaser.Scene{
         this.load.spritesheet('player_sp', 'assets/spritesheets/player.png', { frameWidth: 32, frameHeight: 32 });
         this.load.spritesheet('knaiffs_sp', 'assets/spritesheets/knaiffs.png', {frameWidth: 64, frameHeight: 64 });
         this.load.spritesheet('meilin', 'assets/spritesheets/meilin.png', {frameWidth: 64, frameHeight: 64})
+        this.load.image('knife', 'assets/spritesheets/knife.png')
         this.load.image('tiles', 'assets/maps/tilesheet.png');
         this.load.tilemapTiledJSON('themap', 'assets/maps/map2.json');
+        this.load.image('circle', 'assets/spritesheets/magic_circle.png')
+
         this.load.audio('warning', 'assets/ost/warning.wav')
         this.load.audio('boss', 'assets/ost/boss_ost.mp3')
         this.load.audio('dash', 'assets/ost/dash.wav')
+        this.load.audio('damage', 'assets/ost/damage.wav')
+        this.load.audio('death', 'assets/ost/death.wav')
     }
 
 // função para criação dos elementos
     create ()
     {   
-        this.boss_bgm = this.sound.add('boss', {loop: true})//.setVolume(0.025)
-        this.warning = this.sound.add('warning')//.setVolume(0.05)
-        this.dash = this.sound.add('dash')//.setVolume(0.05)
+        this.boss_bgm = this.sound.add('boss', {loop: true}).setVolume(0.025)
+        this.warning = this.sound.add('warning').setVolume(0.05)
+        this.dash = this.sound.add('dash').setVolume(0.01)
+        this.damage = this.sound.add('damage').setVolume(0.05)
+        this.death = this.sound.add('death').setVolume(0.05)
         this.soundPlayed = false
 
+        this.t = Math.PI
 
          this.storm = false, this.impulse = false,  this.stunned = false, this.boss = false
 
 
-        const messer_pos = {x: 500, y: 50}
+        const messer_pos = {x: 521, y: 151}
         const player_pos = {x: 35, y: 50}
 
         // criação do mapa e ligação com a imagem (tilesheet)
@@ -42,6 +50,7 @@ class Fase1 extends Phaser.Scene{
         this.cameras.main.setZoom(2);
 
         this.player.body.width = 30;
+        this.player.hp = 100
 
         // criação da Meilin 
 
@@ -65,6 +74,7 @@ class Fase1 extends Phaser.Scene{
         this.messer.lastSpell = 'Impulse'
         this.messer.isStunned = false
         this.messer.isAnimating = false
+        this.messer.circle
 
 
         // criação da colisão com camadas
@@ -186,77 +196,65 @@ class Fase1 extends Phaser.Scene{
 
 // update é chamada a cada novo quadro
     update (){
-        const messerImpulse = () => {
-                console.log("Messer impulse")
-                /*
-                if(!this.soundPlayed){
-                    this.dash.play()
-                    this.soundPlayed = true
-                }
-                */
+        const arenaHeight = 736
+        const arenaWidth = 466
 
-                this.time.delayedCall(3000, ()=>{
-                    this.messer.lastSpell = 'Impulse'
-                    this.messer.cast = false
-                }, [], this);  
+
+        const ease = 2 // the higher, the easier
+        const prob = Math.floor(Math.random()*ease)
+
+        if(this.player.hp <= 0){
+            this.scene.restart()
+            this.boss_bgm.stop()
+            this.death.play()
+        } 
+        
+
+        const spawnKnife = (t) => {
+            const knife= this.add.sprite(this.messer.body.x, this.messer.body.y, 'knife')
+            this.physics.world.enable(knife)
+            knife.body.setAllowGravity(false)
+            knife.setScale(-0.02)
+            knife.setRotation(t/Math.PI)
+            knife.body.setVelocity(100*Math.cos(t), +200*Math.sin(t))
+            this.dash.play()
+            this.physics.add.collider(knife, this.wallsLayer, ()=>{
+                knife.destroy()
+            })
+            this.physics.add.collider(knife, this.player, ()=> {
+                this.player.hp = this.player.hp - 10
+                this.damage.play()
+                knife.destroy()
+            })
+        }
+
+        const messerMoves = (t) => {
+            let x = this.player.body.x
+            let y = this.player.body.y
+            let mx = this.messer.body.x
+            let my = this.messer.body.y
+            let dx = x - mx
+            let dy = y - my
+
+
+            this.messer.setVelocity((dx)*Math.cos(t)*300*Math.pow(Math.sin(t), 2)/Math.sqrt(dx*dx+dy*dy), (dy)*Math.cos(t)*300*Math.pow(Math.sin(t), 2)/Math.sqrt(dx*dx+dy*dy))
+            this.messer.circle.x = this.messer.body.x + 20
+            this.messer.circle.y = this.messer.body.y + 40
+            this.messer.circle.setRotation(Math.PI*t/3)
+            
         }
 
         const messerKnives = () => {
-            console.log('Messer storm of knives!!!')
-            
-            if(!this.messer.isAnimating){
-                this.messer.anims.play('knives_storm', true)
-                this.messer.isAnimating = true
+            this.messer.anims.play('knives_storm', true)
+            if(prob == 0){ // difficulty controller
+                spawnKnife(this.t)
             }
-
-            this.time.delayedCall(5000, ()=>{
-                this.messer.lastSpell = 'Storm'
-                this.messer.cast = false
-                this.messer.isAnimating = false
-            }, [], this);    
-        }
-
-        const messerCasts = () => {
-            console.log("Messer is casting.")
-            
-            if(!this.soundPlayed){
-                this.warning.play()
-                this.soundPlayed = true
-            }
-
-            if(!this.messer.isAnimating){
-                this.messer.anims.play('knives_cast', true)
-                this.messer.isAnimating = true
-            } 
-
-            this.time.delayedCall(3000, ()=>{
-                this.messer.cast = true
-                this.soundPlayed = false
-                this.messer.isAnimating = false
-            }, [], this);  
+            messerMoves(this.t)
+            this.t += 0.1
         }
 
         if(this.boss){
-            if(!this.messer.isStunned){
-                if(this.messer.cast){
-                    if(this.messer.lastSpell === 'Impulse'){
-                        messerKnives()
-                    }else if(this.messer.lastSpell === 'Storm'){
-                        messerImpulse()
-                    }
-                }else{
-                    messerCasts()
-                }
-            }else{
-                console.log("Messer fell!!")
-                setTimeout(()=>{
-                    console.log("Messer is up again.")
-                    this.messer.isStunned = false
-                }, 3000)
-            }
-            /*if(this.storm){
-                messerImpulse()
-            }*/
+            messerKnives()
         }
 
 
@@ -329,7 +327,14 @@ class Fase1 extends Phaser.Scene{
         if(this.physics.overlap(this.player, this.zone_boss)){ 
             this.boss_bgm.play()
             this.zone_boss.destroy()
-            this.boss = true
+            this.messer.anims.play('knives_cast', true)
+            this.warning.play()
+            this.messer.circle= this.add.sprite(this.messer.body.x+20, this.messer.body.y+40, 'circle')
+            this.messer.circle.setScale(0.1)
+            this.time.delayedCall(3000, ()=>{
+                this.boss = true
+            
+            }, [], this);              
         }
     }
 }
