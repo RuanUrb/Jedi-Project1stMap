@@ -127,8 +127,10 @@ class Fase1 extends Phaser.Scene{
         this.interact_txt.setVisible(false);   // deixa invisível
 
         // criação de lista de textos (diálogs) e do objeto dialogs
-        var textos = ["Olá, jogador. Temo lhe dizer que o encontro em apuros.", "A saída é logo a frente, mas uma força - uma energia descomunal - a bloqueia.", "Tenho algo que pode lhe ser útil, mas primeiramente me responda:"];
+        var textos = ["Olá, jogador. Temo lhe dizer que o encontro em apuros.", "A saída desse jardim é logo a frente, mas sinto uma força descomunal que a bloqueia.", "Tenho uma arma que pode lhe ser útil, mas preciso que me responda:"];
         this.txtLst_0 = textos.map(text => `Meilin:\n${text}`)
+
+        var messer_text = ['Você sobreviveu ao corredor de esqueletos, vejo. Nunca pensei que chegaria tão longe, jovem guerreiro. Talvez eu tenha te subestimado, hehe.', 'De qualquer forma, sua curta jornada aqui termina:', 'Você descobrirá porquê sou chamado de Messer Khenaifes, o mestre das facas!!']
 
         var facas = [""]
 
