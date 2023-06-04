@@ -27,7 +27,10 @@ class Fase1 extends Phaser.Scene{
         this.death = this.sound.add('death').setVolume(0.05)
         this.soundPlayed = false
 
-        this.t = Math.PI
+        this.t = Math.PI/2
+        this.circleCenter = {x: 512, y: 384}
+        this.circleRadius = 233
+
 
          this.storm = false, this.impulse = false,  this.stunned = false, this.boss = false
 
@@ -216,7 +219,7 @@ class Fase1 extends Phaser.Scene{
             knife.body.setAllowGravity(false)
             knife.setScale(-0.02)
             knife.setRotation(t/Math.PI)
-            knife.body.setVelocity(100*Math.cos(t), +200*Math.sin(t))
+            knife.body.setVelocity(200*Math.sin(t))
             this.dash.play()
             this.physics.add.collider(knife, this.wallsLayer, ()=>{
                 knife.destroy()
@@ -229,15 +232,10 @@ class Fase1 extends Phaser.Scene{
         }
 
         const messerMoves = (t) => {
-            let x = this.player.body.x
-            let y = this.player.body.y
-            let mx = this.messer.body.x
-            let my = this.messer.body.y
-            let dx = x - mx
-            let dy = y - my
-
-
-            this.messer.setVelocity((dx)*Math.cos(t)*300*Math.pow(Math.sin(t), 2)/Math.sqrt(dx*dx+dy*dy), (dy)*Math.cos(t)*300*Math.pow(Math.sin(t), 2)/Math.sqrt(dx*dx+dy*dy))
+            this.messer.setPosition(512 - Math.cos(t) * this.circleRadius, 384 - Math.sin(t) * this.circleRadius)
+            //this.messer.setVelocity((dx)*Math.cos(t)*300*Math.pow(Math.sin(t), 2)/Math.sqrt(dx*dx+dy*dy), (dy)*Math.cos(t)*300*Math.pow(Math.sin(t), 2)/Math.sqrt(dx*dx+dy*dy))
+            
+            // Messer's magic circle
             this.messer.circle.x = this.messer.body.x + 20
             this.messer.circle.y = this.messer.body.y + 40
             this.messer.circle.setRotation(Math.PI*t/3)
@@ -250,7 +248,7 @@ class Fase1 extends Phaser.Scene{
                 spawnKnife(this.t)
             }
             messerMoves(this.t)
-            this.t += 0.1
+            this.t += 0.01
         }
 
         if(this.boss){
