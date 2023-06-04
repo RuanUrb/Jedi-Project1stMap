@@ -10,6 +10,8 @@ class Fase1 extends Phaser.Scene{
         this.load.tilemapTiledJSON('themap', 'assets/maps/map2.json');
         this.load.image('circle', 'assets/spritesheets/magic_circle.png')
         this.load.image('barrier', 'assets/spritesheets/barrier.png')
+        this.load.image('shield', 'assets/spritesheets/shield.png')
+
 
 
         this.load.audio('warning', 'assets/ost/warning.wav')
@@ -22,6 +24,9 @@ class Fase1 extends Phaser.Scene{
 // função para criação dos elementos
     create ()
     {   
+        this.gameTimer = 0
+
+
         this.boss_bgm = this.sound.add('boss', {loop: true}).setVolume(0.025)
         this.warning = this.sound.add('warning').setVolume(0.05)
         this.dash = this.sound.add('dash').setVolume(0.01)
@@ -56,31 +61,68 @@ class Fase1 extends Phaser.Scene{
 
         this.player.body.width = 30;
         this.player.hp = 100
+        this.player.hasShield = true
 
+        // creating Player's shield
+        this.shield = this.physics.add.sprite(this.player.body.x+10,this.player.body.y+10,'shield')
+        this.shield.setScale(0.05)
+        this.shield.setVisible(false)
+        this.shield.body.width = 20
+        this.shield.body.height = 20
+        this.shieldIsUp = false
         // criação da Meilin 
 
         this.meilin = this.physics.add.sprite(122, 80, 'meilin', 0)
         this.meilin.setScale(0.5)
         this.meilin.setFrame(27)
-        this.physics.add.collider(this.player, this.meilin, (player, meilin)=> {
+        this.physics.add.collider(this.player, this.meilin, (meilin)=> {
             meilin.body.setImmovable(true)
             meilin.setVelocity(0)
         })
 
+
         // criação do boss messer
+
 
         this.messer = this.physics.add.sprite(messer_pos.x, messer_pos.y, 'knaiffs_sp', 0);
         this.messer.setScale(0.5);
         this.messer.body.setSize(50, 80);
         this.messer.setFrame(27)
 
-        //bossfight attributes for messer
-        this.messer.cast = false
-        this.messer.lastSpell = 'Impulse'
-        this.messer.isStunned = false
-        this.messer.isAnimating = false
-        this.messer.circle
+         // Messer's HUD
+        
+         this.healthWidth = 400;
+         this.healthHeight = 10;
+ 
+         this.messer.hp = 1000;
+         this.messerLifeBackground = this.add.rectangle(0, 0, this.healthWidth, this.healthHeight, 0x000000);
+         this.messerLife = this.add.rectangle(0, 0, 0.4*this.messer.hp, this.healthHeight, 0xff0000);
+         this.messerLife.setVisible(false);
+         this.messerLife.setOrigin(0, 0);
+         this.messerLife.setScrollFactor(0);
+         this.messerLife.setDepth(1);
+         this.messerLifeBackground.setVisible(false);
+         this.messerLifeBackground.setOrigin(0, 0);
+         this.messerLifeBackground.setScrollFactor(0);
+         this.messerLifeBackground.setDepth(1); 
+ 
+         this.nomeText = this.add.text(0, this.healthHeight + 5, "Messer Kniffes", { fontFamily: 'comic-sans', fontSize: '16px', color: '#ffffff' });
+         this.nomeText.setVisible(false);
+         this.nomeText.setOrigin(0, 0);
+         this.nomeText.setScrollFactor(0);
+         this.nomeText.setDepth(1); 
+         this.messerLifeBackground.setStrokeStyle(2,0x000000);
+         this.nomeText.setStroke('#000000', 4);
+         this.messerLife.x = this.player.x - this.cameras.main.scrollX - 200;
+         this.messerLife.y = this.player.y - this.cameras.main.scrollY - 175;
+         this.messerLifeBackground.x = this.player.x - this.cameras.main.scrollX - 200;
+         this.messerLifeBackground.y = this.player.y - this.cameras.main.scrollY - 175;
+         this.nomeText.x = this.player.x - this.cameras.main.scrollX - 40;
+         this.nomeText.y = this.player.y - this.cameras.main.scrollY - 165;
+ 
 
+        //bossfight attributes for messer
+        this.messer.circle
 
         // criação da colisão com camadas
         this.wallsLayer.setCollisionBetween(65, 750, true);
@@ -130,9 +172,10 @@ class Fase1 extends Phaser.Scene{
         var textos = ["Olá, jogador. Temo lhe dizer que o encontro em apuros.", "A saída desse jardim é logo a frente, mas sinto uma força descomunal que a bloqueia.", "Tenho uma arma que pode lhe ser útil, mas preciso que me responda:"];
         this.txtLst_0 = textos.map(text => `Meilin:\n${text}`)
 
-        var messer_text = ['Você sobreviveu ao corredor de esqueletos, vejo. Nunca pensei que chegaria tão longe, jovem guerreiro. Talvez eu tenha te subestimado, hehe.', 'De qualquer forma, sua curta jornada aqui termina:', 'Você descobrirá porquê sou chamado de Messer Khenaifes, o mestre das facas!!']
+        var messer_text = ['Você sobreviveu ao corredor de esqueletos, vejo.', 'Nunca pensei que chegaria tão longe, jovem guerreiro. Talvez eu tenha te subestimado, hehe.', 'De qualquer forma, sua curta jornada aqui termina:', 'Você entenderá porquê sou chamado de Messer Khenaifes, o lorde das facas!!']
 
-        var facas = [""]
+        this.txtLst_1 = messer_text.map(text => `Messer:\n${text}`)
+
 
         this.quest_0 = ["Para produzir bolos, uma fábrica utiliza 5 bandejas de ovos por dia. Sabendo que em uma bandeja tem 30 ovos, quantos ovos serão necessários para produção de bolos no período de 15 dias?",
         1, "◯ 75", "◯ 150",  "◯ 450",  "◯ 2250"]
@@ -203,11 +246,19 @@ class Fase1 extends Phaser.Scene{
 
 // update é chamada a cada novo quadro
     update (){
+        this.gameTimer += 0.1
+
+        if(this.player.hasShield){
+            this.shield.setPosition(this.player.body.x, this.player.body.y)
+            this.shield.setVisible(true)
+            if(this.keyE?.isDown){
+                this.shield.setRotation(this.gameTimer*3)
+            }
+        }
+
+
         const arenaHeight = 736
         const arenaWidth = 466
-
-        console.log(`X: ${this.player.body.x}, Y:${this.player.body.y}`)
-        //264, 752-608
 
         const ease = 2 // the higher, the easier
         const prob = Math.floor(Math.random()*ease)
@@ -220,7 +271,9 @@ class Fase1 extends Phaser.Scene{
         
 
         const spawnKnife = (t) => {
-            const knife= this.add.sprite(this.messer.body.x, this.messer.body.y, 'knife')
+            const knife= this.physics.add.sprite(this.messer.body.x, this.messer.body.y, 'knife')
+            knife.isDeflected = false
+            //knife.setImmovable(true)
             this.physics.world.enable(knife)
             knife.body.setAllowGravity(false)
             knife.setScale(-0.02)
@@ -236,9 +289,22 @@ class Fase1 extends Phaser.Scene{
                 knife.destroy()
             })
             this.physics.add.collider(knife, this.player, ()=> {
-                this.player.hp = this.player.hp - 10
-                this.damage.play()
-                knife.destroy()
+                if(this.player.hasShield && this.keyE?.isDown){
+                    knife.body.setVelocity(-knife.body.velocity.x*2, -knife.body.velocity.y*2)
+                    knife.isDeflected = true
+                }else{
+                    this.player.hp = this.player.hp - 10
+                    this.damage.play()
+                    knife.destroy()
+                }
+            this.physics.add.collider(knife, this.messer, ()=> {
+                if(knife.isDeflected){
+                    console.log('Messer foi atingido')
+                    this.messer.hp =- 100
+                    this.messerLife.setSize(0.4*this.messer.hp, this.healthHeight) //this.add.rectangle(0, 0, 0.4*this.messer.hp, this.healthHeight, 0xff0000);
+                }
+            })
+
             })
         }
 
@@ -249,7 +315,7 @@ class Fase1 extends Phaser.Scene{
             // Messer's magic circle
             this.messer.circle.x = this.messer.body.x + 20
             this.messer.circle.y = this.messer.body.y + 40
-            this.messer.circle.setRotation(Math.PI*t/3)
+            this.messer.circle.setRotation(Math.PI*2*t)
             
         }
 
@@ -263,6 +329,9 @@ class Fase1 extends Phaser.Scene{
         }
 
         if(this.boss){
+            this.messerLife.setVisible(true);
+            this.messerLifeBackground.setVisible(true);
+            this.nomeText.setVisible(true);
             messerKnives()
         }
 
@@ -283,9 +352,8 @@ class Fase1 extends Phaser.Scene{
         if (!this.keySPACE.isDown){
             this.spacePressed = false;
         }
-        {
 
-         
+        {
             if (this.keyD?.isDown) {
                 this.player.setVelocityX(210);
                 this.player.anims.play('run', true);
