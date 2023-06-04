@@ -9,6 +9,8 @@ class Fase1 extends Phaser.Scene{
         this.load.image('tiles', 'assets/maps/tilesheet.png');
         this.load.tilemapTiledJSON('themap', 'assets/maps/map2.json');
         this.load.image('circle', 'assets/spritesheets/magic_circle.png')
+        this.load.image('barrier', 'assets/spritesheets/barrier.png')
+
 
         this.load.audio('warning', 'assets/ost/warning.wav')
         this.load.audio('boss', 'assets/ost/boss_ost.mp3')
@@ -202,6 +204,8 @@ class Fase1 extends Phaser.Scene{
         const arenaHeight = 736
         const arenaWidth = 466
 
+        console.log(`X: ${this.player.body.x}, Y:${this.player.body.y}`)
+        //264, 752-608
 
         const ease = 2 // the higher, the easier
         const prob = Math.floor(Math.random()*ease)
@@ -218,8 +222,13 @@ class Fase1 extends Phaser.Scene{
             this.physics.world.enable(knife)
             knife.body.setAllowGravity(false)
             knife.setScale(-0.02)
-            knife.setRotation(t/Math.PI)
-            knife.body.setVelocity(200*Math.sin(t))
+            knife.angle = t
+
+            const rand = Math.floor(Math.random()*5)
+
+            knife.body.setVelocity(200*Math.cos(t*100)+20*rand*Math.sin(t*100) + rand*Math.cos(t)*Math.sin(t), 50*Math.sin(t*100)+20*rand*Math.cos(t*100)+rand*Math.cos(t)*Math.sin(t))
+            
+            
             this.dash.play()
             this.physics.add.collider(knife, this.wallsLayer, ()=>{
                 knife.destroy()
@@ -318,6 +327,19 @@ class Fase1 extends Phaser.Scene{
         }
     }
 
+            //264, 752-608
+
+    createBarrier(n){
+        let yi = 771
+        for(let i = 0; i<n; i++){
+            let barrier= this.physics.add.sprite(279, 771-26*i, 'barrier')
+            barrier.setScale(0.05)
+            barrier.setImmovable(true)
+            this.physics.add.collider(this.player, barrier);
+
+        }
+    }
+
     startDialogsOrQuestion(){
         if (this.physics.overlap(this.player, this.zone_dlg)){
                 this.dialogs.updateDlgBox(this.txtLst_0);
@@ -329,6 +351,7 @@ class Fase1 extends Phaser.Scene{
             this.warning.play()
             this.messer.circle= this.add.sprite(this.messer.body.x+20, this.messer.body.y+40, 'circle')
             this.messer.circle.setScale(0.1)
+            this.createBarrier(7)
             this.time.delayedCall(3000, ()=>{
                 this.boss = true
             
