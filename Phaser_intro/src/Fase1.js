@@ -69,7 +69,7 @@ class Fase1 extends Phaser.Scene{
 
         // creating Player's shield
         this.shield = this.physics.add.sprite(this.player.body.x+10,this.player.body.y+10,'shield')
-        this.shield.setScale(0.05)
+        this.shield.setScale(0.08)
         this.shield.setVisible(false)
         this.shield.body.width = 20
         this.shield.body.height = 20
@@ -262,7 +262,7 @@ class Fase1 extends Phaser.Scene{
 // update é chamada a cada novo quadro
     update (){
 
-
+        console.log(this.messer.hp)
 
         this.gameTimer += 0.1 
         this.messerLife.width = 0.4*this.messer.hp
@@ -270,8 +270,16 @@ class Fase1 extends Phaser.Scene{
         if(this.player.hasShield){
             this.shield.setPosition(this.player.body.x, this.player.body.y)
             this.shield.setVisible(true)
-            if(this.keyE?.isDown){
+            if(this.keyE?.isDown && !this.shieldIsUp){
                 this.shield.setRotation(this.gameTimer*3)
+                this.shield.setScale(0.1)
+                this.time.delayedCall(500, ()=>{
+                    this.shieldIsUp = true
+                }, [], this);    
+                
+            }else{
+                this.shield.setScale(0.08)
+                this.shieldIsUp = false
             }
         }
 
@@ -318,9 +326,11 @@ class Fase1 extends Phaser.Scene{
             this.physics.add.collider(knife, this.messer, ()=> {
                 if(knife.isDeflected){
                     console.log('Messer foi atingido')
-                    this.messer.hp =- 100
-                     //this.add.rectangle(0, 0, 0.4*this.messer.hp, this.healthHeight, 0xff0000);
+                    this.messer.hp -= 100
                 }
+            this.physics.add.collider(this.messer, this.player, ()=>{
+                this.player.hp -= 100
+            })
             })
 
             })
