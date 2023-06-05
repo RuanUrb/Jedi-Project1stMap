@@ -11,6 +11,7 @@ class Fase1 extends Phaser.Scene{
         this.load.image('circle', 'assets/spritesheets/magic_circle.png')
         this.load.image('barrier', 'assets/spritesheets/barrier.png')
         this.load.image('shield', 'assets/spritesheets/shield.png')
+        this.load.image('explosion', 'assets/spritesheets/explosion.png', {frameWidth: 32, frameHeight: 32})
 
 
 
@@ -19,6 +20,7 @@ class Fase1 extends Phaser.Scene{
         this.load.audio('dash', 'assets/ost/dash.wav')
         this.load.audio('damage', 'assets/ost/damage.wav')
         this.load.audio('death', 'assets/ost/death.wav')
+        this.load.audio('explosion', 'assets/ost/explosion.wav')
     }
 
 // função para criação dos elementos
@@ -32,6 +34,8 @@ class Fase1 extends Phaser.Scene{
         this.dash = this.sound.add('dash').setVolume(0.01)
         this.damage = this.sound.add('damage').setVolume(0.05)
         this.death = this.sound.add('death').setVolume(0.05)
+        this.explosion = this.sound.add('explosion').setVolume(0.5)
+
         this.soundPlayed = false
 
         this.t = Math.PI/2
@@ -119,7 +123,18 @@ class Fase1 extends Phaser.Scene{
          this.messerLifeBackground.y = this.player.y - this.cameras.main.scrollY - 175;
          this.nomeText.x = this.player.x - this.cameras.main.scrollX - 40;
          this.nomeText.y = this.player.y - this.cameras.main.scrollY - 165;
- 
+        
+
+         this.explosionEmitter = this.add.particles('explosion').createEmitter({
+            x: 0, // Set the initial position of the explosion to the boss's position
+            y: 0,
+            lifespan: 200, // Duration of the particles
+            speed: { min: 100, max: 400 }, // Speed range of the particles
+            scale: { start: 0.02, end: 0 }, // Scale of the particles over time
+            blendMode: 'ADD', // Blend mode for the particles
+            frequency: -1, // Emit particles only once
+            quantity: 10, // Number of particles to emit
+        });
 
         //bossfight attributes for messer
         this.messer.circle
@@ -246,7 +261,11 @@ class Fase1 extends Phaser.Scene{
 
 // update é chamada a cada novo quadro
     update (){
-        this.gameTimer += 0.1
+
+
+
+        this.gameTimer += 0.1 
+        this.messerLife.width = 0.4*this.messer.hp
 
         if(this.player.hasShield){
             this.shield.setPosition(this.player.body.x, this.player.body.y)
@@ -268,7 +287,6 @@ class Fase1 extends Phaser.Scene{
             this.boss_bgm.stop()
             this.death.play()
         } 
-        
 
         const spawnKnife = (t) => {
             const knife= this.physics.add.sprite(this.messer.body.x, this.messer.body.y, 'knife')
@@ -301,7 +319,7 @@ class Fase1 extends Phaser.Scene{
                 if(knife.isDeflected){
                     console.log('Messer foi atingido')
                     this.messer.hp =- 100
-                    this.messerLife.setSize(0.4*this.messer.hp, this.healthHeight) //this.add.rectangle(0, 0, 0.4*this.messer.hp, this.healthHeight, 0xff0000);
+                     //this.add.rectangle(0, 0, 0.4*this.messer.hp, this.healthHeight, 0xff0000);
                 }
             })
 
@@ -311,7 +329,6 @@ class Fase1 extends Phaser.Scene{
         const messerMoves = (t) => {
             this.messer.setPosition(512 - Math.cos(t) * this.circleRadius, 384 - Math.sin(t) * this.circleRadius)
             //this.messer.setVelocity((dx)*Math.cos(t)*300*Math.pow(Math.sin(t), 2)/Math.sqrt(dx*dx+dy*dy), (dy)*Math.cos(t)*300*Math.pow(Math.sin(t), 2)/Math.sqrt(dx*dx+dy*dy))
-            
             // Messer's magic circle
             this.messer.circle.x = this.messer.body.x + 20
             this.messer.circle.y = this.messer.body.y + 40
@@ -319,9 +336,9 @@ class Fase1 extends Phaser.Scene{
             
         }
 
-        const messerKnives = () => {
+        const messerKnives = (boolean) => {
             this.messer.anims.play('knives_storm', true)
-            if(prob == 0){ // difficulty controller
+            if(prob == 0 && boolean){ // difficulty controller
                 spawnKnife(this.t)
             }
             messerMoves(this.t)
@@ -332,7 +349,24 @@ class Fase1 extends Phaser.Scene{
             this.messerLife.setVisible(true);
             this.messerLifeBackground.setVisible(true);
             this.nomeText.setVisible(true);
-            messerKnives()
+            messerKnives(true)
+            if(this.messer.hp <= 0){
+                this.messerLife.setVisible(false);
+                this.messerLifeBackground.setVisible(false);
+                this.explosionEmitter.setPosition(this.messer.body.x+16, this.messer.body.y+32)
+                this.explosionEmitter.explode()
+                messerKnives(false)
+                this.time.delayedCall(3000, ()=>{
+                    this.boss = false
+                    this.explosionEmitter.stop()
+                    if(!this.soundPlayed){
+                        this.explosion.play()
+                        this.soundPlayed = true
+                    }
+                    this.messer.destroy()
+                    this.messer.circle.destroy()
+                }, [], this);             
+            }
         }
 
 
