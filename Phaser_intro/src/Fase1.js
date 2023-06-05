@@ -21,6 +21,7 @@ class Fase1 extends Phaser.Scene{
         this.load.audio('damage', 'assets/ost/damage.wav')
         this.load.audio('death', 'assets/ost/death.wav')
         this.load.audio('explosion', 'assets/ost/explosion.wav')
+        this.load.audio('hit', 'assets/ost/hit.wav')
     }
 
 // função para criação dos elementos
@@ -35,6 +36,7 @@ class Fase1 extends Phaser.Scene{
         this.damage = this.sound.add('damage').setVolume(0.05)
         this.death = this.sound.add('death').setVolume(0.05)
         this.explosion = this.sound.add('explosion').setVolume(0.5)
+        this.hit = this.sound.add('hit').setVolume(0.05)
 
         this.soundPlayed = false
 
@@ -327,6 +329,7 @@ class Fase1 extends Phaser.Scene{
                 if(knife.isDeflected){
                     console.log('Messer foi atingido')
                     this.messer.hp -= 100
+                    this.hit.play()
                 }
             this.physics.add.collider(this.messer, this.player, ()=>{
                 this.player.hp -= 100
