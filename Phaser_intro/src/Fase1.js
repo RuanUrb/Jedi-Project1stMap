@@ -140,6 +140,7 @@ class Fase1 extends Phaser.Scene{
 
         //bossfight attributes for messer
         this.messer.circle
+        this.messer.ease = 2
 
         // criação da colisão com camadas
         this.wallsLayer.setCollisionBetween(65, 750, true);
@@ -263,7 +264,7 @@ class Fase1 extends Phaser.Scene{
 
 // update é chamada a cada novo quadro
     update (){
-
+        this.messer.hp --
         console.log(this.messer.hp)
 
         this.gameTimer += 0.1 
@@ -289,9 +290,6 @@ class Fase1 extends Phaser.Scene{
         const arenaHeight = 736
         const arenaWidth = 466
 
-        const ease = 2 // the higher, the easier
-        const prob = Math.floor(Math.random()*ease)
-
         if(this.player.hp <= 0){
             this.scene.restart()
             this.boss_bgm.stop()
@@ -301,7 +299,6 @@ class Fase1 extends Phaser.Scene{
         const spawnKnife = (t) => {
             const knife= this.physics.add.sprite(this.messer.body.x, this.messer.body.y, 'knife')
             knife.isDeflected = false
-            //knife.setImmovable(true)
             this.physics.world.enable(knife)
             knife.body.setAllowGravity(false)
             knife.setScale(-0.02)
@@ -310,12 +307,14 @@ class Fase1 extends Phaser.Scene{
             const rand = Math.floor(Math.random()*5)
 
             knife.body.setVelocity(200*Math.cos(t*100)+20*rand*Math.sin(t*100) + rand*Math.cos(t)*Math.sin(t), 50*Math.sin(t*100)+20*rand*Math.cos(t*100)+rand*Math.cos(t)*Math.sin(t))
-            
-            
+
             this.dash.play()
+
+
             this.physics.add.collider(knife, this.wallsLayer, ()=>{
                 knife.destroy()
             })
+
             this.physics.add.collider(knife, this.player, ()=> {
                 if(this.player.hasShield && this.keyE?.isDown){
                     knife.body.setVelocity(-knife.body.velocity.x*2, -knife.body.velocity.y*2)
@@ -325,19 +324,21 @@ class Fase1 extends Phaser.Scene{
                     this.damage.play()
                     knife.destroy()
                 }
+            })
+
             this.physics.add.collider(knife, this.messer, ()=> {
                 if(knife.isDeflected){
-                    console.log('Messer foi atingido')
                     this.messer.hp -= 100
                     this.hit.play()
                 }
+            })
+
             this.physics.add.collider(this.messer, this.player, ()=>{
                 this.player.hp -= 100
             })
-            })
 
-            })
-        }
+            }
+
 
         const messerMoves = (t) => {
             this.messer.setPosition(512 - Math.cos(t) * this.circleRadius, 384 - Math.sin(t) * this.circleRadius)
@@ -349,9 +350,10 @@ class Fase1 extends Phaser.Scene{
             
         }
 
-        const messerKnives = (boolean) => {
+        const messerKnives = () => {
+            const prob = Math.floor(Math.random()*this.messer.ease)
             this.messer.anims.play('knives_storm', true)
-            if(prob == 0 && boolean){ // difficulty controller
+            if(prob == 0){ // difficulty controller
                 spawnKnife(this.t)
             }
             messerMoves(this.t)
@@ -362,20 +364,24 @@ class Fase1 extends Phaser.Scene{
             this.messerLife.setVisible(true);
             this.messerLifeBackground.setVisible(true);
             this.nomeText.setVisible(true);
-            messerKnives(true)
+            messerKnives()
+            
             if(this.messer.hp <= 0){
                 this.messerLife.setVisible(false);
                 this.messerLifeBackground.setVisible(false);
+                this.nomeText.setVisible(false);
+                this.messer.ease = 0
                 this.explosionEmitter.setPosition(this.messer.body.x+16, this.messer.body.y+32)
                 this.explosionEmitter.explode()
-                messerKnives(false)
                 this.time.delayedCall(3000, ()=>{
                     this.boss = false
                     this.explosionEmitter.stop()
                     if(!this.soundPlayed){
                         this.explosion.play()
+                        this.boss_bgm.stop()
                         this.soundPlayed = true
                     }
+                    
                     this.messer.destroy()
                     this.messer.circle.destroy()
                 }, [], this);             
