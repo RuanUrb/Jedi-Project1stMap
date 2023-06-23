@@ -180,7 +180,6 @@ class Fase1 extends Phaser.Scene{
         // criação da mensagem "pressione E para interagir"
         var px = this.cameras.main.width*0.35;  // pos horizontal
         var py = 2*this.cameras.main.height/3;  // pos vertical
-        console.log('pp', px, py)
         this.interact_txt = this.add.text(px, py, "Pressione E para interagir", {
             font: "15px Arial",
             fill: "#A0A0A0",
@@ -194,7 +193,7 @@ class Fase1 extends Phaser.Scene{
         this.interact_txt.setVisible(false);   // deixa invisível
 
         // criação de lista de textos (diálogs) e do objeto dialogs
-        var textos = ["Olá, jogador. Temo lhe dizer que o encontro em apuros.", "A saída desse jardim é logo a frente, mas sinto uma força descomunal que a bloqueia.", "Tenho uma arma que pode lhe ser útil, mas preciso que me responda:"];
+        var textos = ["Olá, jogador. Temo lhe dizer que o encontro em apuros.", "A saída desse jardim é logo a frente, mas sinto uma força descomunal que a bloqueia.", "Por causa disso, lhe conferi o escudo mágico que está portando agora.", "Ele deve lhe proteger do que quer que esteja à frente.", "Ao apertar E, você roda o escudo. Mas cuidado, você não pode estar com ele ativo a todo o momento.", "Que a sorte lhe guie."];
         this.txtLst_0 = textos.map(text => `Meilin:\n${text}`)
 
         this.lockedDialogue = ['O caminho está bloqueado.']

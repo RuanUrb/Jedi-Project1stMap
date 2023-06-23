@@ -15,12 +15,15 @@ class Fase0 extends Phaser.Scene{
         this.load.tilemapTiledJSON('themap0', 'assets/maps/mapa.json');
         this.load.image('barrier_sp','assets/spritesheets/barrier.png');
         this.load.audio('bgm', 'assets/ost/bgm.mp3')
+        this.load.audio('sfx', 'assets/ost/sfx.wav')
     }
 
 // função para criação dos elementos
     create ()
     {   
         this.bgm = this.sound.add('bgm', {loop: true}).setVolume(0.025)
+        this.sfx = this.sound.add('sfx').setVolume(0.05)
+
         this.bgm.play()
         // criação do mapa e ligação com a imagem (tilesheet)
         this.map = this.make.tilemap({ key: 'themap0', tileWidth: 16, tileHeight: 16 });
@@ -159,7 +162,9 @@ class Fase0 extends Phaser.Scene{
         this.interact_txt.setVisible(false);   // deixa invisível
 
         // criação de lista de textos (diálogs) e do objeto dialogs
-        this.txtLst_0 = ["Eu estava te esperando! Seja bem vindo, jogador. Meu nome é Knaíffes, mas pode me chamar de facas.", "Daqui em diante aparecerão inimigos que voce precisará derrotar e perguntas que voce precisará responder.", "Ao responder corretamente, o muro se abrirá e você receberá mais inimigos.", "Porém, cuidado. Ao final desse desafio estará um ser de força incomum. Esteja preparado."];
+        let textolista = ["Eu estava te esperando! Seja bem vindo, jogador. Meu nome é Kniffes, mas pode me chamar de facas.", "Daqui em diante você precisará resolver os enigmas se quiser passar por esses corredores.", "Respondendo as questões corretamente, os portões se abrirão magicamente a você!", "Porém, cuidado. Ao final desse desafio estará um ser de força incomum. Esteja preparado."];
+        this.txtLst_0 = textolista.map(phrase=>{return `Kniffes:\n${phrase}`})
+
         this.quest_0 = ["Para produzir bolos, uma fábrica utiliza 5 bandejas de ovos por dia. Sabendo que em uma bandeja tem 30 ovos, quantos ovos serão necessários para produção de bolos no período de 15 dias?",
         4, "◯ 75", "◯ 150",  "◯ 450",  "◯ 2250"]
         
@@ -263,39 +268,38 @@ class Fase0 extends Phaser.Scene{
         if (this.physics.overlap(this.player, this.zone_dlg)){
                 this.dialogs.updateDlgBox(this.txtLst_0);        
         }
+
         if (this.physics.overlap(this.player, this.zone_ques)){
-            this.dialogs.scene.dialogs.makeQuestion(this.quest_0, acertou_fcn, errou_fcn);
+            this.dialogs.scene.dialogs.makeQuestion(this.quest_0, ()=>{
+                this.sfx.play()
+                this.dialogs.hideBox()
+                this.barrier.destroy()
+                this.barrier2.destroy()
+                this.zone_ques.destroy()
+            },
+             ()=>{this.dialogs.hideBox()});
         }
 
         if (this.physics.overlap(this.player, this.zone_ques3)){
-            this.dialogs.scene.dialogs.makeQuestion(this.quest_1, acertou_fcn2, errou_fcn);
+            this.dialogs.scene.dialogs.makeQuestion(this.quest_1, ()=>{
+                this.sfx.play()
+                this.dialogs.hideBox()
+                this.barrier3.destroy()
+                this.barrier4.destroy()
+                this.zone_ques3.destroy()
+            },
+             ()=>{this.dialogs.hideBox()});
         }
 
         if (this.physics.overlap(this.player, this.zone_ques4)){
-            this.dialogs.scene.dialogs.makeQuestion(this.quest_2, acertou_fcn3, errou_fcn);
+            this.dialogs.scene.dialogs.makeQuestion(this.quest_2, ()=>{
+                this.sfx.play()
+                this.dialogs.hideBox()
+                this.barrier5.destroy()
+                this.barrier6.destroy()
+                this.zone_ques4.destroy()
+            },
+             ()=>{this.dialogs.hideBox()});
         }
     }
-}
-
-function acertou_fcn(ptr){
-    this.dialogs.hideBox();
-    this.barrier.destroy()
-    this.barrier2.destroy()
-}
-
-function acertou_fcn2(ptr){
-    this.dialogs.hideBox();
-    this.barrier3.destroy()
-    this.barrier4.destroy()
-}
-
-function acertou_fcn3(ptr){
-    this.dialogs.hideBox();
-    this.barrier5.destroy()
-    this.barrier6.destroy()
-}
-
-
-function errou_fcn(ptr){
-    this.dialogs.hideBox();
 }
